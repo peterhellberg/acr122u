@@ -9,8 +9,11 @@
 
     go get -u github.com/peterhellberg/acr122u
 
+<img src="http://downloads.acs.com.hk/product-website-image/acr38-image.jpg" align="right" width="230" height="230">
+
 ## Dependencies
 
+ - <https://www.acs.com.hk/en/products/3/acr122u-usb-nfc-reader/> - ACR122U USB NFC Reader
  - <https://pcsclite.apdu.fr/> - Middleware to access a smart card using SCard API (PC/SC)
  - <https://github.com/ebfe/scard> - Go bindings to the PC/SC API
 
