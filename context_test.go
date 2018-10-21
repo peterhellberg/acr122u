@@ -242,6 +242,7 @@ func (ctx *mockContext) GetStatusChange(rs []scard.ReaderState, timeout time.Dur
 	for i := range rs {
 		rs[i].EventState = scard.StatePresent
 	}
+
 	return nil
 }
 
@@ -250,6 +251,7 @@ func getStatusChangeFunc(sf scard.StateFlag) func([]scard.ReaderState, time.Dura
 		for i := range rs {
 			rs[i].EventState = sf
 		}
+
 		return nil
 	}
 }
