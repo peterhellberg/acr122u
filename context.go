@@ -153,11 +153,7 @@ func (ctx *Context) WhenCardPresent(f func(*Card) error) error {
 		return err
 	}
 
-	if err := ctx.waitUntilCardRelease(reader); err != nil {
-		return err
-	}
-
-	return nil
+	return ctx.waitUntilCardRelease(reader)
 }
 
 func (ctx *Context) waitUntilCardPresent() (string, error) {
