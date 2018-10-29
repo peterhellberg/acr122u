@@ -7,10 +7,6 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/acr122u)
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/peterhellberg/acr122u#license-mit)
 
-## Installation
-
-    go get -u github.com/peterhellberg/acr122u
-
 ## Dependencies
 
  - <https://www.acs.com.hk/en/products/3/acr122u-usb-nfc-reader/> - ACR122U USB NFC Reader
@@ -18,6 +14,10 @@
  - <https://github.com/ebfe/scard> - Go bindings to the PC/SC API
 
  Under macOS `pcsc-lite` can be installed using homebrew: `brew install pcsc-lite`
+
+## Installation
+
+    go get -u github.com/peterhellberg/acr122u
 
 ## Usage
 
