@@ -1,6 +1,11 @@
 package main
 
-import "github.com/peterhellberg/acr122u"
+import (
+	"log"
+	"os"
+
+	"github.com/peterhellberg/acr122u"
+)
 
 func main() {
 	ctx, err := acr122u.EstablishContext()
@@ -8,7 +13,7 @@ func main() {
 		panic(err)
 	}
 
-	h := &handler{acr122u.StdoutLogger()}
+	h := &handler{log.New(os.Stdout, "", 0)}
 
 	ctx.Serve(h)
 }

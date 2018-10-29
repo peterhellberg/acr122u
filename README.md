@@ -7,7 +7,9 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/acr122u)
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/peterhellberg/acr122u#license-mit)
 
-## Dependencies
+This is a Go package for the ACR122U USB NFC Reader
+
+## Requirements
 
  - <https://www.acs.com.hk/en/products/3/acr122u-usb-nfc-reader/> - ACR122U USB NFC Reader
  - <https://pcsclite.apdu.fr/> - Middleware to access a smart card using SCard API (PC/SC)
@@ -49,7 +51,12 @@ func main() {
 ```go
 package main
 
-import "github.com/peterhellberg/acr122u"
+import (
+	"log"
+	"os"
+
+	"github.com/peterhellberg/acr122u"
+)
 
 func main() {
 	ctx, err := acr122u.EstablishContext()
@@ -57,7 +64,7 @@ func main() {
 		panic(err)
 	}
 
-	h := &handler{acr122u.StdoutLogger()}
+	h := &handler{log.New(os.Stdout, "", 0)}
 
 	ctx.Serve(h)
 }
@@ -82,8 +89,6 @@ so let’s see how we can use it with this package:
 package main
 
 import (
-	"log"
-
 	nats "github.com/nats-io/go-nats"
 	acr122u "github.com/peterhellberg/acr122u"
 )
@@ -91,12 +96,12 @@ import (
 func main() {
 	nc, err := nats.Connect(nats.DefaultURL)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	ctx, err := acr122u.EstablishContext()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	ctx.ServeFunc(func(c acr122u.Card) {
@@ -112,7 +117,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"runtime"
 
 	nats "github.com/nats-io/go-nats"
@@ -121,7 +125,7 @@ import (
 func main() {
 	nc, err := nats.Connect(nats.DefaultURL)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	nc.Subscribe("acr122u", func(m *nats.Msg) {
@@ -143,10 +147,10 @@ Copyright (c) 2018 [Peter Hellberg](https://c7.se/)
 > distribute, sublicense, and/or sell copies of the Software, and to
 > permit persons to whom the Software is furnished to do so, subject to
 > the following conditions:
-
+>
 > The above copyright notice and this permission notice shall be
 > included in all copies or substantial portions of the Software.
-
+>
 > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 > EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 > MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
