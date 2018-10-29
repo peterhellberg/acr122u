@@ -1,43 +1,15 @@
 package acr122u
 
-import (
-	"time"
+import "github.com/ebfe/scard"
 
-	"github.com/ebfe/scard"
-)
+var scardEstablishContext = scard.EstablishContext
 
-var (
-	scardEstablishContext = scard.EstablishContext
-	cmdBuzzerEnable       = []byte{0xFF, 0x00, 0x52, 0xFF, 0x00}
-	cmdBuzzerDisable      = []byte{0xFF, 0x00, 0x52, 0x00, 0x00}
-)
-
-// ShareMode is the share mode type
-type ShareMode uint32
-
-// Share modes
-var (
-	ShareExclusive ShareMode = 0x1
-	ShareShared    ShareMode = 0x2
-)
-
-// Protocol is the protocol type
-type Protocol uint32
-
-// Protocols
-var (
-	ProtocolUndefined Protocol = 0x0
-	ProtocolT0        Protocol = 0x1
-	ProtocolT1        Protocol = 0x2
-	ProtocolAny                = ProtocolT0 | ProtocolT1
-)
-
-type scardContext interface {
-	Release() error
-	IsValid() (bool, error)
-	ListReaders() ([]string, error)
-	Connect(string, scard.ShareMode, scard.Protocol) (*scard.Card, error)
-	GetStatusChange(readerStates []scard.ReaderState, timeout time.Duration) error
+// Context for ACR122U readers
+type Context struct {
+	context   scardContext
+	readers   []string
+	shareMode ShareMode
+	protocol  Protocol
 }
 
 // EstablishContext creates a ACR122U context
@@ -48,35 +20,6 @@ func EstablishContext(options ...Option) (*Context, error) {
 	}
 
 	return newContext(sctx, options...)
-}
-
-func newContext(sctx scardContext, options ...Option) (*Context, error) {
-	if _, err := sctx.IsValid(); err != nil {
-		return nil, err
-	}
-
-	readers, err := sctx.ListReaders()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(readers) == 0 {
-		return nil, scard.ErrNoReadersAvailable
-	}
-
-	ctx := &Context{
-		context:        sctx,
-		readers:        readers,
-		shareMode:      ShareShared,
-		protocol:       ProtocolAny,
-		disabledBuzzer: true,
-	}
-
-	for _, option := range options {
-		option(ctx)
-	}
-
-	return ctx, nil
 }
 
 // Option is the function type used to configure the context
@@ -96,20 +39,32 @@ func WithProtocol(p Protocol) Option {
 	}
 }
 
-// WithDisabledBuzzer is used to specify if the buzzer should be disabled or not
-func WithDisabledBuzzer(b bool) Option {
-	return func(ctx *Context) {
-		ctx.disabledBuzzer = b
+func newContext(sctx scardContext, options ...Option) (*Context, error) {
+	if _, err := sctx.IsValid(); err != nil {
+		return nil, err
 	}
-}
 
-// Context for ACR122U readers
-type Context struct {
-	context        scardContext
-	readers        []string
-	shareMode      ShareMode
-	protocol       Protocol
-	disabledBuzzer bool
+	readers, err := sctx.ListReaders()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(readers) == 0 {
+		return nil, scard.ErrNoReadersAvailable
+	}
+
+	ctx := &Context{
+		context:   sctx,
+		readers:   readers,
+		shareMode: ShareShared,
+		protocol:  ProtocolAny,
+	}
+
+	for _, option := range options {
+		option(ctx)
+	}
+
+	return ctx, nil
 }
 
 // Release should be called when the context is not needed anymore
@@ -117,43 +72,53 @@ func (ctx *Context) Release() error {
 	return ctx.context.Release()
 }
 
-func (ctx *Context) connect(reader string) (*Card, error) {
-	sc, err := ctx.context.Connect(reader, scard.ShareMode(ctx.shareMode), scard.Protocol(ctx.protocol))
+// Readers returns a list of readers
+func (ctx *Context) Readers() []string {
+	return ctx.readers
+}
+
+// ServeFunc uses the provided HandlerFunc as a Handler
+func (ctx *Context) ServeFunc(hf HandlerFunc) error {
+	return ctx.Serve(hf)
+}
+
+// Serve cards being swiped using the provided Handler
+func (ctx *Context) Serve(h Handler) error {
+	for {
+		reader, err := ctx.waitUntilCardPresent()
+		if err != nil {
+			return err
+		}
+
+		c, err := ctx.connect(reader)
+		if err != nil {
+			return err
+		}
+
+		if c.uid, err = c.getUID(); err == nil {
+			h.ServeCard(c)
+		}
+
+		if err := c.disconnect(scard.ResetCard); err != nil {
+			return err
+		}
+
+		if err := ctx.waitUntilCardRelease(reader); err != nil {
+			return err
+		}
+	}
+}
+
+func (ctx *Context) connect(reader string) (*card, error) {
+	sc, err := ctx.context.Connect(reader,
+		scard.ShareMode(ctx.shareMode),
+		scard.Protocol(ctx.protocol),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return newCard(sc), nil
-}
-
-// WhenCardPresent accepts a function that is called each time a card is present
-func (ctx *Context) WhenCardPresent(f func(*Card) error) error {
-	reader, err := ctx.waitUntilCardPresent()
-	if err != nil {
-		return err
-	}
-
-	c, err := ctx.connect(reader)
-	if err != nil {
-		return err
-	}
-
-	// Disable the beep after the first card swipe
-	if ctx.disabledBuzzer {
-		c.scard.Transmit(cmdBuzzerDisable)
-	} else {
-		c.scard.Transmit(cmdBuzzerEnable)
-	}
-
-	if err := f(c); err != nil {
-		return err
-	}
-
-	if err := c.scard.Disconnect(scard.ResetCard); err != nil {
-		return err
-	}
-
-	return ctx.waitUntilCardRelease(reader)
+	return newCard(reader, sc), nil
 }
 
 func (ctx *Context) waitUntilCardPresent() (string, error) {
@@ -169,6 +134,7 @@ func (ctx *Context) waitUntilCardPresent() (string, error) {
 			if rs[i].EventState&scard.StatePresent != 0 {
 				return ctx.readers[i], nil
 			}
+
 			rs[i].CurrentState = rs[i].EventState
 		}
 

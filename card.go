@@ -2,24 +2,56 @@ package acr122u
 
 import "github.com/ebfe/scard"
 
-var cmdReadTagID = []byte{0xFF, 0xCA, 0x00, 0x00, 0x04}
+// Card represents a ACR122U card
+type Card interface {
+	// Reader returns the name of the reader used
+	Reader() string
 
-type scardCard interface {
-	Transmit([]byte) ([]byte, error)
-	Status() (*scard.CardStatus, error)
-	Disconnect(scard.Disposition) error
+	// Status returns the card status
+	Status() (Status, error)
+
+	// UID returns the UID for the card
+	UID() []byte
 }
 
-// Card contains a ACR122U card
-type Card struct {
-	scard scardCard
+type card struct {
+	uid    []byte
+	reader string
+	scard  scardCard
 }
 
-func newCard(sc scardCard) *Card {
-	return &Card{scard: sc}
+func newCard(reader string, sc scardCard) *card {
+	return &card{reader: reader, scard: sc}
 }
 
-// ReadTagID returns the tag ID for the card
-func (c *Card) ReadTagID() ([]byte, error) {
-	return c.scard.Transmit(cmdReadTagID)
+func (c *card) Reader() string {
+	return c.reader
+}
+
+func (c *card) Status() (Status, error) {
+	scs, err := c.scard.Status()
+	if err != nil {
+		return Status{}, err
+	}
+
+	return newStatus(scs)
+}
+
+func (c *card) UID() []byte {
+	return c.uid
+}
+
+// transmit raw command to underlying scardCard
+func (c *card) transmit(cmd []byte) ([]byte, error) {
+	return c.scard.Transmit(cmd)
+}
+
+// getUID returns the UID for the card
+func (c *card) getUID() ([]byte, error) {
+	return c.transmit(cmdGetUID)
+}
+
+// disconnect the card
+func (c *card) disconnect(d scard.Disposition) error {
+	return c.scard.Disconnect(d)
 }

@@ -5,11 +5,124 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/peterhellberg/acr122u)
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/peterhellberg/acr122u#license-mit)
 
+<img src="http://downloads.acs.com.hk/product-website-image/acr38-image.jpg" align="right" width="230" height="230">
+
 ## Installation
 
     go get -u github.com/peterhellberg/acr122u
 
-<img src="http://downloads.acs.com.hk/product-website-image/acr38-image.jpg" align="right" width="230" height="230">
+## Usage
+
+### Minimal example
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/peterhellberg/acr122u"
+)
+
+func main() {
+	ctx, err := acr122u.EstablishContext()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.ServeFunc(func(c acr122u.Card) {
+		fmt.Printf("%x\n", c.UID())
+	})
+}
+```
+
+### Using a struct that implements the `acr122u.Handler` interface
+
+```go
+package main
+
+import "github.com/peterhellberg/acr122u"
+
+func main() {
+	ctx, err := acr122u.EstablishContext()
+	if err != nil {
+		panic(err)
+	}
+
+	h := &handler{acr122u.StdoutLogger()}
+
+	ctx.Serve(h)
+}
+
+type handler struct {
+	acr122u.Logger
+}
+
+func (h *handler) ServeCard(c acr122u.Card) {
+	h.Printf("%x\n", c.UID())
+}
+```
+
+### NATS
+
+[NATS](https://nats.io/) is my favorite messaging system,
+so let’s see how we can use it with this package.
+
+#### Publish each card UID to a NATS subject
+
+```go
+package main
+
+import (
+	"log"
+
+	nats "github.com/nats-io/go-nats"
+	acr122u "github.com/peterhellberg/acr122u"
+)
+
+func main() {
+	nc, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, err := acr122u.EstablishContext()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx.ServeFunc(func(c acr122u.Card) {
+		nc.Publish("acr122u", c.UID())
+	})
+}
+```
+
+#### Subscribe from the NATS subject
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"runtime"
+
+	nats "github.com/nats-io/go-nats"
+)
+
+func main() {
+	nc, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	nc.Subscribe("acr122u", func(m *nats.Msg) {
+		fmt.Printf("Received UID: %x\n", m.Data)
+	})
+
+	runtime.Goexit()
+}
+```
 
 ## Dependencies
 

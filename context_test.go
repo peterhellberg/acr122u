@@ -70,7 +70,6 @@ func TestNewContext(t *testing.T) {
 		ctx, err := newContext(&mockContext{},
 			WithShareMode(ShareExclusive),
 			WithProtocol(ProtocolT1),
-			WithDisabledBuzzer(true),
 		)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -78,10 +77,6 @@ func TestNewContext(t *testing.T) {
 
 		if got, want := ctx.readers[0], "Test"; got != want {
 			t.Fatalf("ctx.readers[0] = %q, want %q", got, want)
-		}
-
-		if got, want := ctx.disabledBuzzer, true; got != want {
-			t.Fatalf("ctx.disabledBuzzer = %v, want %v", got, want)
 		}
 	})
 }
@@ -113,6 +108,16 @@ func TestContextRelease(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
+}
+
+func TestContextReaders(t *testing.T) {
+	readers := []string{"r1", "r2"}
+
+	ctx := &Context{readers: readers}
+
+	if got, want := ctx.Readers(), readers; !stringsEqual(got, want) {
+		t.Fatalf("ctx.Readers() = %v, want %v", got, want)
+	}
 }
 
 func TestContextConnect(t *testing.T) {
@@ -254,4 +259,18 @@ func getStatusChangeFunc(sf scard.StateFlag) func([]scard.ReaderState, time.Dura
 
 		return nil
 	}
+}
+
+func stringsEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, s := range a {
+		if s != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
