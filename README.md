@@ -11,6 +11,14 @@
 
     go get -u github.com/peterhellberg/acr122u
 
+## Dependencies
+
+ - <https://www.acs.com.hk/en/products/3/acr122u-usb-nfc-reader/> - ACR122U USB NFC Reader
+ - <https://pcsclite.apdu.fr/> - Middleware to access a smart card using SCard API (PC/SC)
+ - <https://github.com/ebfe/scard> - Go bindings to the PC/SC API
+
+ Under macOS `pcsc-lite` can be installed using homebrew: `brew install pcsc-lite`
+
 ## Usage
 
 ### Minimal example
@@ -66,9 +74,9 @@ func (h *handler) ServeCard(c acr122u.Card) {
 ### NATS
 
 [NATS](https://nats.io/) is my favorite messaging system,
-so let’s see how we can use it with this package.
+so let’s see how we can use it with this package:
 
-#### Publish each card UID to a NATS subject
+#### Publish each UID to a NATS subject
 
 ```go
 package main
@@ -97,7 +105,7 @@ func main() {
 }
 ```
 
-#### Subscribe from the NATS subject
+#### Subscribe to the NATS subject
 
 ```go
 package main
@@ -123,14 +131,6 @@ func main() {
 	runtime.Goexit()
 }
 ```
-
-## Dependencies
-
- - <https://www.acs.com.hk/en/products/3/acr122u-usb-nfc-reader/> - ACR122U USB NFC Reader
- - <https://pcsclite.apdu.fr/> - Middleware to access a smart card using SCard API (PC/SC)
- - <https://github.com/ebfe/scard> - Go bindings to the PC/SC API
-
- Under macOS `pcsc-lite` can be installed using homebrew: `brew install pcsc-lite`
 
 ## License (MIT)
 
