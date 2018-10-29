@@ -99,10 +99,6 @@ func (ctx *Context) Serve(h Handler) error {
 			h.ServeCard(c)
 		}
 
-		if err := c.disconnect(scard.ResetCard); err != nil {
-			return err
-		}
-
 		if err := ctx.waitUntilCardRelease(reader); err != nil {
 			return err
 		}

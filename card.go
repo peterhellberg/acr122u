@@ -1,7 +1,5 @@
 package acr122u
 
-import "github.com/ebfe/scard"
-
 // Card represents a ACR122U card
 type Card interface {
 	// Reader returns the name of the reader used
@@ -49,9 +47,4 @@ func (c *card) transmit(cmd []byte) ([]byte, error) {
 // getUID returns the UID for the card
 func (c *card) getUID() ([]byte, error) {
 	return c.transmit(cmdGetUID)
-}
-
-// disconnect the card
-func (c *card) disconnect(d scard.Disposition) error {
-	return c.scard.Disconnect(d)
 }

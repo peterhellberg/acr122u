@@ -79,29 +79,11 @@ func TestCardGetUID(t *testing.T) {
 	}
 }
 
-func TestCardDisconnect(t *testing.T) {
-	for _, want := range []scard.Disposition{
-		scard.LeaveCard,
-		scard.ResetCard,
-		scard.UnpowerCard,
-		scard.EjectCard,
-	} {
-		disconnectCard(func(got scard.Disposition) error {
-			if got != want {
-				t.Fatalf("scard.Disposition = %v, want %v", got, want)
-			}
-
-			return nil
-		}).disconnect(want)
-	}
-}
-
 var testUID = []byte{0x83, 0xfb, 0x58, 0x24, 0x90}
 
 type mockCard struct {
-	transmit   func([]byte) ([]byte, error)
-	status     func() (*scard.CardStatus, error)
-	disconnect func(scard.Disposition) error
+	transmit func([]byte) ([]byte, error)
+	status   func() (*scard.CardStatus, error)
 }
 
 func (c *mockCard) Transmit(cmd []byte) ([]byte, error) {
@@ -112,18 +94,10 @@ func (c *mockCard) Status() (*scard.CardStatus, error) {
 	return c.status()
 }
 
-func (c *mockCard) Disconnect(d scard.Disposition) error {
-	return c.disconnect(d)
-}
-
 func transmitCard(t func(cmd []byte) ([]byte, error)) *card {
 	return newCard("", &mockCard{transmit: t})
 }
 
 func statusCard(s func() (*scard.CardStatus, error)) *card {
 	return newCard("", &mockCard{status: s})
-}
-
-func disconnectCard(d func(got scard.Disposition) error) *card {
-	return newCard("", &mockCard{disconnect: d})
 }

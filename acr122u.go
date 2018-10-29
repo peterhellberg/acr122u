@@ -90,5 +90,4 @@ type scardContext interface {
 type scardCard interface {
 	Transmit([]byte) ([]byte, error)
 	Status() (*scard.CardStatus, error)
-	Disconnect(scard.Disposition) error
 }
