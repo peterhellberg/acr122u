@@ -85,24 +85,28 @@ func (ctx *Context) ServeFunc(hf HandlerFunc) error {
 // Serve cards being swiped using the provided Handler
 func (ctx *Context) Serve(h Handler) error {
 	for {
-		reader, err := ctx.waitUntilCardPresent()
-		if err != nil {
-			return err
-		}
-
-		c, err := ctx.connect(reader)
-		if err != nil {
-			return err
-		}
-
-		if c.uid, err = c.getUID(); err == nil {
-			h.ServeCard(c)
-		}
-
-		if err := ctx.waitUntilCardRelease(reader); err != nil {
-			return err
-		}
+		ctx.serve(h)
 	}
+}
+
+func (ctx *Context) serve(h Handler) error {
+	reader, err := ctx.waitUntilCardPresent()
+	if err != nil {
+		return err
+	}
+
+	c, err := ctx.connect(reader)
+	if err != nil {
+		return err
+	}
+
+	if c.uid, err = c.getUID(); err == nil {
+		h.ServeCard(c)
+	} else {
+		return err
+	}
+
+	return ctx.waitUntilCardRelease(reader)
 }
 
 func (ctx *Context) connect(reader string) (*card, error) {
