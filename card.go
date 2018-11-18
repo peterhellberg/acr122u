@@ -1,5 +1,7 @@
 package acr122u
 
+import "bytes"
+
 // Card represents a ACR122U card
 type Card interface {
 	// Reader returns the name of the reader used
@@ -41,7 +43,20 @@ func (c *card) UID() []byte {
 
 // transmit raw command to underlying scardCard
 func (c *card) transmit(cmd []byte) ([]byte, error) {
-	return c.scard.Transmit(cmd)
+	resp, err := c.scard.Transmit(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	if bytes.Equal(resp, rcOperationFailed) {
+		return nil, ErrOperationFailed
+	}
+
+	if bytes.HasSuffix(resp, rcOperationSuccess) {
+		return bytes.TrimSuffix(resp, rcOperationSuccess), nil
+	}
+
+	return resp, nil
 }
 
 // getUID returns the UID for the card
