@@ -75,6 +75,12 @@ var (
 	cmdGetUID = []byte{0xFF, 0xCA, 0x00, 0x00, 0x04}
 )
 
+// Response codes
+var (
+	rcOperationSuccess = []byte{0x90, 0x00}
+	rcOperationFailed  = []byte{0x63, 0x00}
+)
+
 // scardContext is the interface used to communicate
 // with one or more ACR122U USB NFC Readers.
 type scardContext interface {
