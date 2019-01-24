@@ -138,7 +138,7 @@ func main() {
 
 ## License (MIT)
 
-Copyright (c) 2018 [Peter Hellberg](https://c7.se/)
+Copyright (c) 2018-2019 [Peter Hellberg](https://c7.se)
 
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
