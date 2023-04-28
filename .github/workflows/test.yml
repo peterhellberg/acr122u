@@ -8,6 +8,8 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Install libpcsclite-dev
+      run: sudo apt-get install -y libpcsclite-dev
     - name: Install Go
       uses: actions/setup-go@v4
       with:
